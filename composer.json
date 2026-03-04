@@ -1,0 +1,39 @@
+{
+    "name": "survos/past-perfect-bundle",
+    "description": "Symfony SurvosPastPerfectBundle",
+    "keywords": [
+        "symfony-ux",
+        "symfony"
+    ],
+    "license": "MIT",
+    "type": "symfony-bundle",
+    "authors": [
+        {
+            "name": "Tac Tacelosky",
+            "email": "tacman@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "symfony/config": "^7.3",
+        "symfony/dependency-injection": "^7.3",
+        "symfony/http-kernel": "^7.3",
+        "symfony/console": "^7.3",
+        "symfony/messenger": "^8.0",
+        "symfony/http-client": "^8.0",
+        "survos/jsonl-bundle": "^2.0"
+    },
+    "require-dev": {
+        "symfony/phpunit-bridge": "^7.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Survos\\SurvosPastPerfectBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Survos\\SurvosPastPerfectBundle\\Tests\\": "tests/"
+        }
+    }
+}
