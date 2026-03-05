@@ -17,17 +17,21 @@
     ],
     "require": {
         "php": "^8.4",
-        "symfony/config": "^7.3|^8.0",
-        "symfony/dependency-injection": "^7.3|^8.0",
-        "symfony/http-kernel": "^7.3|^8.0",
-        "symfony/console": "^7.3|^8.0",
-        "symfony/http-client": "^7.3|^8.0",
-        "symfony/dom-crawler": "^7.3|^8.0",
-        "symfony/css-selector": "^7.3|^8.0",
-        "survos/jsonl-bundle": "^2.0"
+        "ext-dom": "*",
+        "symfony/config": "^8.0",
+        "symfony/dependency-injection": "^8.0",
+        "symfony/http-kernel": "^8.0",
+        "symfony/console": "^8.0",
+        "symfony/http-client": "^8.0",
+        "symfony/messenger": "^8.0",
+        "survos/jsonl-bundle": "^2.0",
+        "survos/site-discovery-bundle": "dev-main"
     },
     "require-dev": {
-        "symfony/phpunit-bridge": "^7.3|^8.0"
+        "symfony/phpunit-bridge": "^8.0"
+    },
+    "suggest": {
+        "survos/import-bundle": "Provides import:profile:report and import:convert for analysing harvested JSONL files"
     },
     "autoload": {
         "psr-4": {

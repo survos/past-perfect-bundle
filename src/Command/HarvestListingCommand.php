@@ -30,7 +30,7 @@ final class HarvestListingCommand
         #[Argument('Base URL of the PastPerfect Online site (e.g. https://fauquierhistory.pastperfectonline.com)')]
         string $baseUrl,
         #[Option('Output directory for the JSONL file')]
-        string $outputDir = 'var/pastperfect',
+        string $outputDir = 'data/pastperfect',
         #[Option('Force re-harvest even if a completed listing file already exists')]
         bool $force = false,
     ): int {
