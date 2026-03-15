@@ -11,6 +11,7 @@ use Survos\PastPerfectBundle\Command\ProbeRegistryCommand;
 use Survos\PastPerfectBundle\MessageHandler\ProbeItemHandler;
 use Survos\PastPerfectBundle\MessageHandler\ProbeRegistrySiteHandler;
 use Survos\PastPerfectBundle\Service\DetailParserService;
+use Survos\PastPerfectBundle\Service\HomepageParserService;
 use Survos\PastPerfectBundle\Service\PastPerfectClient;
 use Survos\PastPerfectBundle\Service\SiteProbeService;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
@@ -47,6 +48,8 @@ final class SurvosPastPerfectBundle extends AbstractBundle
             ]);
 
         $services->set(DetailParserService::class);
+
+        $services->set(HomepageParserService::class);
 
         $services->set(SiteProbeService::class)
             ->args([
