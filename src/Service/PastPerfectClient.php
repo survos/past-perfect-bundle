@@ -137,6 +137,39 @@ final class PastPerfectClient
     }
 
     /**
+     * Build a concrete listing page URL.
+     *
+     * Page 1 omits the "page" query parameter because PPO uses the bare
+     * AdvancedSearch URL for the first result page.
+     */
+    public function listingPageUrl(string $baseUrl, int $page = 1): string
+    {
+        $baseUrl = rtrim($baseUrl, '/');
+        $params = self::SEARCH_PARAMS;
+
+        if ($page > 1) {
+            $params['page'] = (string) $page;
+        }
+
+        return $baseUrl . '/AdvancedSearch?' . http_build_query($params);
+    }
+
+    /**
+     * Parse one fetched listing HTML page into flat listing rows.
+     *
+     * @return array<array<string, string>>
+     */
+    public function parseListingHtml(string $html, string $baseUrl): array
+    {
+        $baseUrl = rtrim($baseUrl, '/');
+        $site    = $this->siteSlug($baseUrl);
+        $source  = $this->sourceLabel($baseUrl);
+        $dom     = \Dom\HTMLDocument::createFromString($html, LIBXML_NOERROR);
+
+        return $this->parseRecords($dom, $baseUrl, $site, $source);
+    }
+
+    /**
      * Fetch and cache the raw HTML for a detail page.
      *
      * Returns the HTML string; callers parse what they need.
@@ -244,7 +277,7 @@ final class PastPerfectClient
      *
      * @return array<array<string, string>>
      */
-    private function parseRecords(\Dom\HTMLDocument $dom, string $baseUrl, string $site): array
+    private function parseRecords(\Dom\HTMLDocument $dom, string $baseUrl, string $site, string $source): array
     {
         $records = [];
         $seen    = [];
@@ -274,7 +307,7 @@ final class PastPerfectClient
             $seen[$key] = true;
 
             $records[] = [
-                'source' => 'pastperfectonline',
+                'source' => $source,
                 'site'   => $site,
                 'type'   => $type,
                 'id'     => $id,
