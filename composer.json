@@ -24,8 +24,8 @@
         "symfony/console": "^8.0",
         "symfony/http-client": "^8.0",
         "symfony/messenger": "^8.0",
-        "survos/jsonl-bundle": "^2.0",
-        "survos/site-discovery-bundle": "^2.0"
+        "survos/jsonl-bundle": "^2.5",
+        "survos/site-discovery-bundle": "^2.5"
     },
     "require-dev": {
         "symfony/phpunit-bridge": "^8.0"
