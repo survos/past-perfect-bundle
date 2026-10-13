@@ -7,10 +7,6 @@ namespace Survos\PastPerfectBundle\Service;
 use Survos\PastPerfectBundle\Model\SiteProbeResult;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-use function sprintf;
-use function trim;
-use function preg_match;
-
 /**
  * Validates a candidate host by making a lightweight probe request to its
  * /AdvancedSearch endpoint and checking for PastPerfect Online page signatures.
@@ -45,28 +41,29 @@ final class SiteProbeService
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly string $userAgent = 'SurvosPastPerfectBundle Harvester',
-    ) {}
+    ) {
+    }
 
     public function probe(string $host, string $baseUrl): SiteProbeResult
     {
-        $url = rtrim($baseUrl, '/') . '/AdvancedSearch?advanceSearchActivated=False&firstTimeSearch=False'
-            . '&search_include_objects=true&search_include_photos=true'
-            . '&search_include_archives=true&search_include_library=true'
-            . '&actionType=Search';
+        $url = rtrim($baseUrl, '/').'/AdvancedSearch?advanceSearchActivated=False&firstTimeSearch=False'
+            .'&search_include_objects=true&search_include_photos=true'
+            .'&search_include_archives=true&search_include_library=true'
+            .'&actionType=Search';
 
         try {
             $response = $this->httpClient->request('GET', $url, [
                 'timeout' => 15,
                 'headers' => [
                     'User-Agent' => $this->userAgent,
-                    'Accept'     => 'text/html,application/xhtml+xml',
+                    'Accept' => 'text/html,application/xhtml+xml',
                 ],
             ]);
 
-            if ($response->getStatusCode() !== 200) {
+            if (200 !== $response->getStatusCode()) {
                 return new SiteProbeResult(
                     isLive: false,
-                    error: sprintf('HTTP %d', $response->getStatusCode()),
+                    error: \sprintf('HTTP %d', $response->getStatusCode()),
                 );
             }
 
@@ -95,7 +92,7 @@ final class SiteProbeService
             }
         }
 
-        $dom   = \Dom\HTMLDocument::createFromString($html, LIBXML_NOERROR);
+        $dom = \Dom\HTMLDocument::createFromString($html, LIBXML_NOERROR);
         $title = $this->extractTitle($dom);
         $count = $this->extractRecordCount($dom, $html);
 
@@ -106,9 +103,9 @@ final class SiteProbeService
     {
         foreach (['h1', 'title', '.site-title', '.museum-name'] as $selector) {
             $node = $dom->querySelector($selector);
-            if ($node !== null) {
-                $text = trim($node->textContent);
-                if ($text !== '') {
+            if (null !== $node) {
+                $text = \trim($node->textContent);
+                if ('' !== $text) {
                     return $text;
                 }
             }
@@ -127,16 +124,16 @@ final class SiteProbeService
         // Try common result-count element selectors first
         foreach (['.result-count', '.total-results', '#totalResults', '.search-count'] as $selector) {
             $node = $dom->querySelector($selector);
-            if ($node !== null) {
-                $text = trim($node->textContent);
-                if (preg_match('/(\d[\d,]*)/', $text, $m)) {
+            if (null !== $node) {
+                $text = \trim($node->textContent);
+                if (\preg_match('/(\d[\d,]*)/', $text, $m)) {
                     return (int) str_replace(',', '', $m[1]);
                 }
             }
         }
 
         // Fall back to a regex on the raw HTML for "of NNN results" / "NNN records"
-        if (preg_match('/\bof\s+([\d,]+)\s+(?:results?|records?)/i', $html, $m)) {
+        if (\preg_match('/\bof\s+([\d,]+)\s+(?:results?|records?)/i', $html, $m)) {
             return (int) str_replace(',', '', $m[1]);
         }
 

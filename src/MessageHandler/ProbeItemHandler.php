@@ -23,22 +23,23 @@ final class ProbeItemHandler
     public function __construct(
         private readonly PastPerfectClient $client,
         private readonly DetailParserService $parser,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ProbeItemMessage $message): void
     {
         $listingRecord = [
             'source' => 'pastperfectonline',
-            'site'   => $message->site,
-            'type'   => $message->type,
-            'id'     => $message->id,
-            'url'    => $message->url,
+            'site' => $message->site,
+            'type' => $message->type,
+            'id' => $message->id,
+            'url' => $message->url,
         ];
 
-        $html   = $this->client->fetchDetail($message->url, $message->site);
+        $html = $this->client->fetchDetail($message->url, $message->site);
         $detail = $this->parser->parse($html, $listingRecord);
 
-        $tokenCode = $message->type . ':' . $message->id;
+        $tokenCode = $message->type.':'.$message->id;
 
         $writer = JsonlWriter::open($message->detailsPath, mode: 'a');
         $writer->write($detail, $tokenCode);

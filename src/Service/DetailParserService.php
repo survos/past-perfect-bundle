@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace Survos\PastPerfectBundle\Service;
 
-use function trim;
-use function strtolower;
-use function preg_replace;
-use function preg_match;
-use function str_replace;
-
 /**
  * Parses a PastPerfect Online detail page into a flat record array.
  *
@@ -35,7 +29,8 @@ use function str_replace;
 final class DetailParserService
 {
     /**
-     * @param array<string, string> $listingRecord  The originating listing row
+     * @param array<string, string> $listingRecord The originating listing row
+     *
      * @return array<string, mixed>
      */
     public function parse(string $html, array $listingRecord): array
@@ -44,29 +39,29 @@ final class DetailParserService
 
         $record = [
             'source' => $listingRecord['source'] ?? 'pastperfectonline',
-            'site'   => $listingRecord['site']   ?? '',
-            'type'   => $listingRecord['type']   ?? '',
-            'id'     => $listingRecord['id']     ?? '',
-            'url'    => $listingRecord['url']    ?? '',
+            'site' => $listingRecord['site'] ?? '',
+            'type' => $listingRecord['type'] ?? '',
+            'id' => $listingRecord['id'] ?? '',
+            'url' => $listingRecord['url'] ?? '',
         ];
 
         // --- Catalog fields: td.category h3 → td.display ---
         foreach ($this->extractCatalogFields($dom) as $label => $value) {
             $key = $this->normaliseKey($label);
-            if ($key !== '' && !isset($record[$key])) {
+            if ('' !== $key && !isset($record[$key])) {
                 $record[$key] = $value;
             }
         }
 
         // --- Footer copyright / rights notice ---
         $rights = $this->extractRightsNotice($dom);
-        if ($rights !== null) {
+        if (null !== $rights) {
             $record['rights_notice'] = $rights;
         }
 
         // --- Media ---
         $media = $this->extractMedia($dom);
-        if ($media !== []) {
+        if ([] !== $media) {
             $record['media'] = $media;
         }
 
@@ -99,23 +94,23 @@ final class DetailParserService
         // Primary: confirmed PPO structure
         foreach ($dom->querySelectorAll('tr') as $tr) {
             $categoryCell = $tr->querySelector('td.category');
-            $displayCell  = $tr->querySelector('td.display');
+            $displayCell = $tr->querySelector('td.display');
 
-            if ($categoryCell === null || $displayCell === null) {
+            if (null === $categoryCell || null === $displayCell) {
                 continue;
             }
 
             // Label text is inside an <h3> inside the category cell
-            $h3    = $categoryCell->querySelector('h3');
-            $label = trim(($h3 ?? $categoryCell)->textContent);
-            $value = trim($displayCell->textContent);
+            $h3 = $categoryCell->querySelector('h3');
+            $label = \trim(($h3 ?? $categoryCell)->textContent);
+            $value = \trim($displayCell->textContent);
 
-            if ($label !== '' && $value !== '') {
+            if ('' !== $label && '' !== $value) {
                 $pairs[$label] = $value;
             }
         }
 
-        if ($pairs !== []) {
+        if ([] !== $pairs) {
             return $pairs;
         }
 
@@ -123,15 +118,15 @@ final class DetailParserService
         foreach ($dom->querySelectorAll('dl') as $dl) {
             $pendingLabel = null;
             foreach ($dl->childNodes as $child) {
-                if (!($child instanceof \Dom\Element)) {
+                if (!$child instanceof \Dom\Element) {
                     continue;
                 }
-                $tag = strtolower($child->localName);
-                if ($tag === 'dt') {
-                    $pendingLabel = trim($child->textContent);
-                } elseif ($tag === 'dd' && $pendingLabel !== null) {
-                    $value = trim($child->textContent);
-                    if ($pendingLabel !== '' && $value !== '') {
+                $tag = \strtolower($child->localName);
+                if ('dt' === $tag) {
+                    $pendingLabel = \trim($child->textContent);
+                } elseif ('dd' === $tag && null !== $pendingLabel) {
+                    $value = \trim($child->textContent);
+                    if ('' !== $pendingLabel && '' !== $value) {
                         $pairs[$pendingLabel] = $value;
                     }
                     $pendingLabel = null;
@@ -141,11 +136,11 @@ final class DetailParserService
 
         // Fallback 2: .field-label / .field-value siblings
         foreach ($dom->querySelectorAll('.field-label') as $labelNode) {
-            $label   = trim($labelNode->textContent);
+            $label = \trim($labelNode->textContent);
             $sibling = $labelNode->nextElementSibling;
-            if ($label !== '' && $sibling !== null && $sibling->classList->contains('field-value')) {
-                $value = trim($sibling->textContent);
-                if ($value !== '' && !isset($pairs[$label])) {
+            if ('' !== $label && null !== $sibling && $sibling->classList->contains('field-value')) {
+                $value = \trim($sibling->textContent);
+                if ('' !== $value && !isset($pairs[$label])) {
                     $pairs[$label] = $value;
                 }
             }
@@ -153,9 +148,9 @@ final class DetailParserService
 
         // Fallback 3: [data-label] attributes
         foreach ($dom->querySelectorAll('[data-label]') as $node) {
-            $label = trim($node->getAttribute('data-label'));
-            $value = trim($node->textContent);
-            if ($label !== '' && $value !== '' && !isset($pairs[$label])) {
+            $label = \trim($node->getAttribute('data-label'));
+            $value = \trim($node->textContent);
+            if ('' !== $label && '' !== $value && !isset($pairs[$label])) {
                 $pairs[$label] = $value;
             }
         }
@@ -180,9 +175,9 @@ final class DetailParserService
     private function extractRightsNotice(\Dom\HTMLDocument $dom): ?string
     {
         $footer = $dom->querySelector('footer');
-        if ($footer !== null) {
-            $text = trim($footer->textContent);
-            if ($text !== '') {
+        if (null !== $footer) {
+            $text = \trim($footer->textContent);
+            if ('' !== $text) {
                 return $text;
             }
         }
@@ -200,19 +195,19 @@ final class DetailParserService
     private function extractMedia(\Dom\HTMLDocument $dom): array
     {
         $media = [];
-        $seen  = [];
+        $seen = [];
 
         foreach ($dom->querySelectorAll('img[src]') as $img) {
-            $src = trim($img->getAttribute('src'));
-            if ($src === '' || isset($seen[$src])) {
+            $src = \trim($img->getAttribute('src'));
+            if ('' === $src || isset($seen[$src])) {
                 continue;
             }
-            if (preg_match('#/(icon|logo|spacer|blank|arrow|btn|button)#i', $src)) {
+            if (\preg_match('#/(icon|logo|spacer|blank|arrow|btn|button)#i', $src)) {
                 continue;
             }
 
             $seen[$src] = true;
-            $fullSrc    = str_replace('/thumb/', '/images/', $src);
+            $fullSrc = \str_replace('/thumb/', '/images/', $src);
 
             if ($fullSrc !== $src) {
                 $media[] = ['type' => 'image', 'thumb_url' => $src, 'full_url' => $fullSrc];
@@ -229,13 +224,13 @@ final class DetailParserService
     // ------------------------------------------------------------------
 
     /**
-     * "Object Name" → "object_name", "Date (circa)" → "date_circa"
+     * "Object Name" → "object_name", "Date (circa)" → "date_circa".
      */
     private function normaliseKey(string $label): string
     {
-        $key = strtolower($label);
-        $key = preg_replace('/[^a-z0-9]+/', '_', $key) ?? '';
+        $key = \strtolower($label);
+        $key = \preg_replace('/[^a-z0-9]+/', '_', $key) ?? '';
 
-        return trim($key, '_');
+        return \trim($key, '_');
     }
 }

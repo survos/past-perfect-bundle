@@ -34,5 +34,6 @@ final readonly class ProbeItemMessage
 
         /** Absolute path to the details JSONL file to append into */
         public string $detailsPath,
-    ) {}
+    ) {
+    }
 }

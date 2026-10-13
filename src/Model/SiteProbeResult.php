@@ -14,5 +14,6 @@ final readonly class SiteProbeResult
         public ?int $recordCount = null,
         public ?string $title = null,
         public ?string $error = null,
-    ) {}
+    ) {
+    }
 }

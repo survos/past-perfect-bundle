@@ -6,23 +6,7 @@ namespace Survos\PastPerfectBundle\Service;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-use function sprintf;
-use function sleep;
-use function parse_url;
-use function explode;
-use function ltrim;
-use function str_contains;
-use function rtrim;
-use function trim;
-use function preg_match;
 use function sha1;
-use function file_get_contents;
-use function file_put_contents;
-use function is_file;
-use function is_dir;
-use function mkdir;
-use function dirname;
-use function http_build_query;
 
 /**
  * Thin HTTP wrapper around a PastPerfect Online site.
@@ -48,17 +32,17 @@ final class PastPerfectClient
      * using it cuts the number of HTTP round-trips by ~5×.
      */
     private const SEARCH_PARAMS = [
-        'advanceSearchActivated'    => 'False',
-        'firstTimeSearch'           => 'False',
-        'search_include_objects'    => 'true',
-        'search_include_photos'     => 'true',
-        'search_include_archives'   => 'true',
-        'search_include_library'    => 'true',
-        'search_include_creators'   => 'true',
-        'search_include_people'     => 'true',
+        'advanceSearchActivated' => 'False',
+        'firstTimeSearch' => 'False',
+        'search_include_objects' => 'true',
+        'search_include_photos' => 'true',
+        'search_include_archives' => 'true',
+        'search_include_library' => 'true',
+        'search_include_creators' => 'true',
+        'search_include_people' => 'true',
         'search_include_containers' => 'true',
-        'actionType'                => 'Search',
-        'resultsPerPage'            => '100',
+        'actionType' => 'Search',
+        'resultsPerPage' => '100',
     ];
 
     public function __construct(
@@ -66,7 +50,8 @@ final class PastPerfectClient
         private readonly float $throttle = 1.0,
         private readonly string $userAgent = 'SurvosPastPerfectBundle Harvester',
         private readonly ?string $cacheDir = null,
-    ) {}
+    ) {
+    }
 
     // ------------------------------------------------------------------
     // Public API
@@ -79,12 +64,12 @@ final class PastPerfectClient
      */
     public function siteSlug(string $baseUrl): string
     {
-        $host = parse_url($baseUrl, PHP_URL_HOST);
-        if ($host === false || $host === null) {
-            throw new \InvalidArgumentException(sprintf('Cannot parse host from URL "%s".', $baseUrl));
+        $host = \parse_url($baseUrl, PHP_URL_HOST);
+        if (false === $host || null === $host) {
+            throw new \InvalidArgumentException(\sprintf('Cannot parse host from URL "%s".', $baseUrl));
         }
 
-        return explode('.', $host)[0];
+        return \explode('.', $host)[0];
     }
 
     /**
@@ -95,8 +80,9 @@ final class PastPerfectClient
      */
     public function sourceLabel(string $baseUrl): string
     {
-        $host  = parse_url($baseUrl, PHP_URL_HOST) ?? '';
-        $parts = explode('.', $host);
+        $host = \parse_url($baseUrl, PHP_URL_HOST) ?? '';
+        $parts = \explode('.', $host);
+
         // Second-to-last segment is the domain name (e.g. "pastperfectonline")
         return count($parts) >= 2 ? $parts[count($parts) - 2] : 'pastperfectonline';
     }
@@ -117,21 +103,21 @@ final class PastPerfectClient
      */
     public function iterateListing(string $baseUrl): \Generator
     {
-        $baseUrl = rtrim($baseUrl, '/');
-        $site    = $this->siteSlug($baseUrl);
-        $source  = $this->sourceLabel($baseUrl);
-        $nextUrl = $baseUrl . '/AdvancedSearch?' . http_build_query(self::SEARCH_PARAMS);
+        $baseUrl = \rtrim($baseUrl, '/');
+        $site = $this->siteSlug($baseUrl);
+        $source = $this->sourceLabel($baseUrl);
+        $nextUrl = $baseUrl.'/AdvancedSearch?'.\http_build_query(self::SEARCH_PARAMS);
 
-        while ($nextUrl !== null) {
+        while (null !== $nextUrl) {
             $html = $this->fetchCached($nextUrl, $site, 'listing');
-            $dom  = \Dom\HTMLDocument::createFromString($html, LIBXML_NOERROR);
+            $dom = \Dom\HTMLDocument::createFromString($html, LIBXML_NOERROR);
 
             yield from $this->parseRecords($dom, $baseUrl, $site, $source);
 
             $nextUrl = $this->findNextPageUrl($dom, $baseUrl);
 
-            if ($nextUrl !== null && $this->throttle > 0) {
-                sleep((int) $this->throttle);
+            if (null !== $nextUrl && $this->throttle > 0) {
+                \sleep((int) $this->throttle);
             }
         }
     }
@@ -144,14 +130,14 @@ final class PastPerfectClient
      */
     public function listingPageUrl(string $baseUrl, int $page = 1): string
     {
-        $baseUrl = rtrim($baseUrl, '/');
+        $baseUrl = \rtrim($baseUrl, '/');
         $params = self::SEARCH_PARAMS;
 
         if ($page > 1) {
             $params['page'] = (string) $page;
         }
 
-        return $baseUrl . '/AdvancedSearch?' . http_build_query($params);
+        return $baseUrl.'/AdvancedSearch?'.\http_build_query($params);
     }
 
     /**
@@ -161,10 +147,10 @@ final class PastPerfectClient
      */
     public function parseListingHtml(string $html, string $baseUrl): array
     {
-        $baseUrl = rtrim($baseUrl, '/');
-        $site    = $this->siteSlug($baseUrl);
-        $source  = $this->sourceLabel($baseUrl);
-        $dom     = \Dom\HTMLDocument::createFromString($html, LIBXML_NOERROR);
+        $baseUrl = \rtrim($baseUrl, '/');
+        $site = $this->siteSlug($baseUrl);
+        $source = $this->sourceLabel($baseUrl);
+        $dom = \Dom\HTMLDocument::createFromString($html, LIBXML_NOERROR);
 
         return $this->parseRecords($dom, $baseUrl, $site, $source);
     }
@@ -185,7 +171,7 @@ final class PastPerfectClient
      */
     public function detailCachePath(string $url, string $site): ?string
     {
-        if ($this->cacheDir === null) {
+        if (null === $this->cacheDir) {
             return null;
         }
 
@@ -199,7 +185,7 @@ final class PastPerfectClient
     {
         $path = $this->detailCachePath($url, $site);
 
-        return $path !== null && is_file($path);
+        return null !== $path && \is_file($path);
     }
 
     public function throttle(): float
@@ -218,13 +204,13 @@ final class PastPerfectClient
      */
     private function fetchCached(string $url, string $site, string $type): string
     {
-        if ($this->cacheDir !== null) {
+        if (null !== $this->cacheDir) {
             $cachePath = $this->buildCachePath($url, $site, $type);
 
-            if (is_file($cachePath)) {
-                $html = file_get_contents($cachePath);
-                if ($html === false) {
-                    throw new \RuntimeException(sprintf('Failed reading cache file "%s".', $cachePath));
+            if (\is_file($cachePath)) {
+                $html = \file_get_contents($cachePath);
+                if (false === $html) {
+                    throw new \RuntimeException(\sprintf('Failed reading cache file "%s".', $cachePath));
                 }
 
                 return $html;
@@ -233,14 +219,14 @@ final class PastPerfectClient
 
         $html = $this->fetchHttp($url);
 
-        if ($this->cacheDir !== null) {
+        if (null !== $this->cacheDir) {
             /** @var string $cachePath — guaranteed set above when cacheDir !== null */
-            $dir = dirname($cachePath);
-            if (!is_dir($dir) && !mkdir($dir, 0o775, true) && !is_dir($dir)) {
-                throw new \RuntimeException(sprintf('Failed creating cache directory "%s".', $dir));
+            $dir = \dirname($cachePath);
+            if (!\is_dir($dir) && !\mkdir($dir, 0o775, true) && !\is_dir($dir)) {
+                throw new \RuntimeException(\sprintf('Failed creating cache directory "%s".', $dir));
             }
-            if (file_put_contents($cachePath, $html) === false) {
-                throw new \RuntimeException(sprintf('Failed writing cache file "%s".', $cachePath));
+            if (false === \file_put_contents($cachePath, $html)) {
+                throw new \RuntimeException(\sprintf('Failed writing cache file "%s".', $cachePath));
             }
         }
 
@@ -249,7 +235,7 @@ final class PastPerfectClient
 
     private function buildCachePath(string $url, string $site, string $type): string
     {
-        return sprintf('%s/%s/%s/%s.html', rtrim($this->cacheDir ?? '', '/'), $site, $type, sha1($url));
+        return \sprintf('%s/%s/%s/%s.html', \rtrim($this->cacheDir ?? '', '/'), $site, $type, \sha1($url));
     }
 
     private function fetchHttp(string $url): string
@@ -257,13 +243,13 @@ final class PastPerfectClient
         $response = $this->httpClient->request('GET', $url, [
             'headers' => [
                 'User-Agent' => $this->userAgent,
-                'Accept'     => 'text/html,application/xhtml+xml',
+                'Accept' => 'text/html,application/xhtml+xml',
             ],
         ]);
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== 200) {
-            throw new \RuntimeException(sprintf('HTTP %d fetching "%s".', $statusCode, $url));
+        if (200 !== $statusCode) {
+            throw new \RuntimeException(\sprintf('HTTP %d fetching "%s".', $statusCode, $url));
         }
 
         return $response->getContent();
@@ -280,26 +266,26 @@ final class PastPerfectClient
     private function parseRecords(\Dom\HTMLDocument $dom, string $baseUrl, string $site, string $source): array
     {
         $records = [];
-        $seen    = [];
+        $seen = [];
 
         foreach ($dom->querySelectorAll('a[href]') as $anchor) {
-            $href = trim($anchor->getAttribute('href'));
-            if ($href === '') {
+            $href = \trim($anchor->getAttribute('href'));
+            if ('' === $href) {
                 continue;
             }
 
-            if (!str_contains($href, '://')) {
-                $href = $baseUrl . '/' . ltrim($href, '/');
+            if (!\str_contains($href, '://')) {
+                $href = $baseUrl.'/'.\ltrim($href, '/');
             }
 
             // Match /{type}/{UUID-v4}
-            if (!preg_match('#/([a-z]+)/([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})$#', $href, $m)) {
+            if (!\preg_match('#/([a-z]+)/([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})$#', $href, $m)) {
                 continue;
             }
 
             $type = $m[1];
-            $id   = $m[2];
-            $key  = $type . ':' . $id;
+            $id = $m[2];
+            $key = $type.':'.$id;
 
             if (isset($seen[$key])) {
                 continue;
@@ -308,10 +294,10 @@ final class PastPerfectClient
 
             $records[] = [
                 'source' => $source,
-                'site'   => $site,
-                'type'   => $type,
-                'id'     => $id,
-                'url'    => $baseUrl . '/' . $type . '/' . $id,
+                'site' => $site,
+                'type' => $type,
+                'id' => $id,
+                'url' => $baseUrl.'/'.$type.'/'.$id,
             ];
         }
 
@@ -325,19 +311,19 @@ final class PastPerfectClient
     {
         // Prefer explicit rel="next"
         $nextLink = $dom->querySelector('a[rel="next"]');
-        if ($nextLink !== null) {
+        if (null !== $nextLink) {
             $href = $nextLink->getAttribute('href');
-            if ($href !== null && $href !== '' && $href !== '#') {
+            if (null !== $href && '' !== $href && '#' !== $href) {
                 return $this->absolutise($href, $baseUrl);
             }
         }
 
         // Fall back: anchor whose visible text is "Next" or ">"
         foreach ($dom->querySelectorAll('a') as $anchor) {
-            $text = trim($anchor->textContent);
-            if ($text === 'Next' || $text === '>') {
+            $text = \trim($anchor->textContent);
+            if ('Next' === $text || '>' === $text) {
                 $href = $anchor->getAttribute('href');
-                if ($href !== null && $href !== '' && $href !== '#') {
+                if (null !== $href && '' !== $href && '#' !== $href) {
                     return $this->absolutise($href, $baseUrl);
                 }
             }
@@ -348,14 +334,14 @@ final class PastPerfectClient
 
     private function absolutise(string $href, string $baseUrl): ?string
     {
-        $href = trim($href);
-        if ($href === '' || $href === '#') {
+        $href = \trim($href);
+        if ('' === $href || '#' === $href) {
             return null;
         }
-        if (str_contains($href, '://')) {
+        if (\str_contains($href, '://')) {
             return $href;
         }
 
-        return $baseUrl . '/' . ltrim($href, '/');
+        return $baseUrl.'/'.\ltrim($href, '/');
     }
 }

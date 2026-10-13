@@ -31,5 +31,6 @@ final readonly class ProbeRegistrySiteMessage
 
         /** Absolute path to the registry JSONL file to update on completion */
         public string $registryPath,
-    ) {}
+    ) {
+    }
 }
